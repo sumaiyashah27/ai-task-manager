@@ -1,5 +1,3 @@
-<div align="center">
-
 # AI-Powered Task Manager 🚀
 
 A full-stack, AI-enhanced task & workspace manager with real-time collaboration, AI-driven task summarization & deadline suggestions, and production-ready CI/CD.
