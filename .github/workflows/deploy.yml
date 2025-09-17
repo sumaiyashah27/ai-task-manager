@@ -1,0 +1,99 @@
+name: Deploy (build -> push -> trigger)
+
+# run on push to main (change to master if you use master)
+on:
+  push:
+    branches: [ master ]
+
+env:
+  BACKEND_IMAGE: ghcr.io/${{ github.repository_owner }}/ai-task-manager-backend
+  FRONTEND_IMAGE: ghcr.io/${{ github.repository_owner }}/ai-task-manager-frontend
+
+permissions:
+  contents: read
+  packages: write
+  id-token: write
+
+jobs:
+  test:
+    name: Run tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup Node 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Backend tests
+        run: |
+          cd apps/backend
+          npm ci
+          npm run test || true   # optional: fail the job if tests fail (remove `|| true` to stop)
+      - name: Frontend tests
+        run: |
+          cd apps/frontend
+          npm ci
+          npm run test || true
+
+  build-and-push:
+    name: Build and push Docker images
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v2
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build & push backend image
+        uses: docker/build-push-action@v4
+        with:
+          context: ./apps/backend
+          file: ./apps/backend/Dockerfile
+          push: true
+          tags: |
+            ${{ env.BACKEND_IMAGE }}:latest
+            ${{ env.BACKEND_IMAGE }}:${{ github.sha }}
+
+      - name: Build & push frontend image
+        uses: docker/build-push-action@v4
+        with:
+          context: ./apps/frontend
+          file: ./apps/frontend/Dockerfile
+          push: true
+          tags: |
+            ${{ env.FRONTEND_IMAGE }}:latest
+            ${{ env.FRONTEND_IMAGE }}:${{ github.sha }}
+
+  trigger-render:
+    name: Trigger Render (optional)
+    needs: build-and-push
+    if: ${{ secrets.RENDER_API_KEY && secrets.RENDER_SERVICE_ID_BACKEND }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger backend service deploy on Render
+        env:
+          RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
+          RENDER_SERVICE_ID_BACKEND: ${{ secrets.RENDER_SERVICE_ID_BACKEND }}
+        run: |
+          echo "Triggering Render deploy for backend..."
+          curl -X POST "https://api.render.com/deploy/srv-${RENDER_SERVICE_ID_BACKEND}/deploys" \
+            -H "Accept: application/json" \
+            -H "Authorization: Bearer ${RENDER_API_KEY}" \
+            -d '{}'
+
+      - name: Trigger frontend service deploy on Render (optional)
+        if: ${{ secrets.RENDER_SERVICE_ID_FRONTEND }}
+        env:
+          RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
+          RENDER_SERVICE_ID_FRONTEND: ${{ secrets.RENDER_SERVICE_ID_FRONTEND }}
+        run: |
+          echo "Triggering Render deploy for frontend..."
+          curl -X POST "https://api.render.com/deploy/srv-${RENDER_SERVICE_ID_FRONTEND}/deploys" \
+            -H "Accept: application/json" \
+            -H "Authorization: Bearer ${RENDER_API_KEY}" \
+            -d '{}'
