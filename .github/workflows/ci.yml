@@ -1,0 +1,115 @@
+# name: CI
+
+# on:
+#   pull_request:
+#   push:
+#     branches: [ master ]
+
+# jobs:
+#   backend:
+#     name: Backend tests
+#     runs-on: ubuntu-latest
+#     steps:
+#       - uses: actions/checkout@v4
+#       - name: Use Node
+#         uses: actions/setup-node@v4
+#         with:
+#           node-version: 20
+#       - name: Install backend deps
+#         run: |
+#           cd apps/backend
+#           npm ci
+#       - name: Run backend tests
+#         run: |
+#           cd apps/backend
+#           npm run test
+
+#   frontend:
+#     name: Frontend tests
+#     runs-on: ubuntu-latest
+#     steps:
+#       - uses: actions/checkout@v4
+#       - name: Use Node
+#         uses: actions/setup-node@v4
+#         with:
+#           node-version: 20
+#       - name: Install frontend deps & test
+#         run: |
+#           cd apps/frontend
+#           npm ci
+#           npm run test
+# =========================================
+# Continuous Integration (CI) pipeline
+# Office-style setup for ai-task-manager
+# =========================================
+
+# 🚀 Kab run hoga?
+# Har Pull Request pe (feature -> main)
+# Har direct push pe main branch par
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [ master ]
+
+jobs:
+  # -------------------
+  # Backend CI Job
+  # -------------------
+  backend:
+    name: Backend (NestJS) tests
+    runs-on: ubuntu-latest   # GitHub runner machine OS
+
+    steps:
+      # 1) Code checkout (git clone)
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # 2) Node.js setup
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20   # Node.js version (same as local dev)
+
+      # 3) Install dependencies
+      - name: Install backend dependencies
+        run: |
+          cd apps/backend
+          npm ci   # clean install (like npm install but strict)
+
+      # 4) Run backend tests (Jest)
+      - name: Run backend tests
+        run: |
+          cd apps/backend
+          npm run test
+
+  # -------------------
+  # Frontend CI Job
+  # -------------------
+  frontend:
+    name: Frontend (Next.js) tests
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1) Code checkout
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # 2) Node.js setup
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      # 3) Install dependencies
+      - name: Install frontend dependencies
+        run: |
+          cd apps/frontend
+          npm ci
+
+      # 4) Run frontend tests
+      - name: Run frontend tests
+        run: |
+          cd apps/frontend
+          npm run test

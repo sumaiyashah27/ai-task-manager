@@ -3,10 +3,25 @@
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
     "dev": "concurrently \"npm:dev:backend\" \"npm:dev:frontend\"",
     "dev:backend": "cd apps/backend && npm run start:dev",
-    "dev:frontend": "cd apps/frontend && npm run dev"
+    "dev:frontend": "cd apps/frontend && npm run dev",
+    
+    "install:all": "npm --prefix apps/backend ci && npm --prefix apps/frontend ci",
+
+    "test:backend": "cd apps/backend && npm ci && npx prisma generate && npm run test",
+    "test:frontend": "cd apps/frontend && npm ci && npm run test",
+    "test": "npm run test:backend && npm run test:frontend",
+
+    "build:backend": "cd apps/backend && npm ci && npx prisma generate && npm run build",
+    "build:frontend": "cd apps/frontend && npm ci && npm run build",
+    "build": "npm run build:backend && npm run build:frontend",
+
+    "docker:up": "docker-compose up -d",
+    "docker:down": "docker-compose down",
+
+    "pipeline:local": "npm run install:all && npm run test && npm run build",
+    "pipeline:full-local": "npm run install:all && npm run test && npm run build && npm run docker:up"
   },
   "repository": {
     "type": "git",
